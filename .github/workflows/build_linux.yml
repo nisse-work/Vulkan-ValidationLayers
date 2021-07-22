@@ -48,6 +48,7 @@ jobs:
         cc: [gcc, clang]
         cxx: [g++, clang++]
         config: [debug, release]
+        sanitize: [none, leak]
         exclude:
           - cc: gcc
             cxx: clang++
@@ -55,6 +56,8 @@ jobs:
             cxx: g++
           - cc: clang
             config: debug
+          - sanitize: leak
+            config: release
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
@@ -67,7 +70,7 @@ jobs:
                                 libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
                                 libxcb-randr0-dev cmake
       - name: Build and Test Vulkan-ValidationLayers
-        run: python3 scripts/github_ci_win_linux.py --config ${{ matrix.config }}
+        run: python3 scripts/github_ci_win_linux.py --config ${{ matrix.config }} --sanitize=leak
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}

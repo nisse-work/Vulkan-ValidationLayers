@@ -46,6 +46,8 @@ CONFIGURATIONS = ['release', 'debug']
 DEFAULT_CONFIGURATION = CONFIGURATIONS[0]
 ARCHS = [ 'x64', 'Win32' ]
 DEFAULT_ARCH = ARCHS[0]
+SANITIZERS = ['none', 'leak']
+DEFAULT_SANITIZER = SANITIZERS[0]
 
 # Runs a command in a directory and returns its return code.
 # Directory is project root by default, or a relative path from project root
@@ -90,7 +92,13 @@ def BuildVVL(args):
     print("Run CMake for Validation Layers")
     cmake_cmd = f'cmake -DUPDATE_DEPS=ON -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} {args.cmake} ..'
     if IsWindows(): cmake_cmd = cmake_cmd + f' -A {args.arch}'
-    RunShellCmd(cmake_cmd, VVL_BUILD_DIR)
+    env = None
+    if args.sanitize != 'none':
+        env = os.environ
+        env['CFLAGS'] = '-fsanitize=' + args.sanitize
+        env['CXXFLAGS'] = '-fsanitize=' + args.sanitize
+
+    RunShellCmd(cmake_cmd, VVL_BUILD_DIR, env)
 
     print("Build Validation Layers and Tests")
     build_cmd = f'cmake --build . --config {args.configuration}'
@@ -208,6 +216,11 @@ def GetArgParser():
         metavar='ARCH', action='store',
         choices=ARCHS, default=DEFAULT_ARCH,
         help=f'Target architecture. Can be one of: {ARCHS}')
+    parser.add_argument(
+        '--sanitize', dest='sanitize',
+        metavar='SANITIZE', action='store',
+        choices=SANITIZERS, default=DEFAULT_SANITIZER,
+        help=f'Enable compiler sanitizer. Can be one of: {SANITIZERS}')
     parser.add_argument(
         '--cmake', dest='cmake',
         metavar='CMAKE', type=str,
